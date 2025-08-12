@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,10 +12,8 @@
     <link rel="stylesheet" href="{{ url_for('static', path='dashboard/dashboard.css') }}">
     <script src="{{ url_for('static', path='dashboard/dashboard.js') }}" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
 </head>
 <body>
-    
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -40,7 +37,6 @@
                 </li>
             </ul>
         </aside>
-
         <main class="main-content">
             <header class="main-header">
                 <div class="header-left">
@@ -99,7 +95,7 @@
                     <thead>
                         <tr>
                             <th>Platform</th>
-                            <th>Query</th>
+                            <!-- <th>Query</th> -->
                             <th>Status</th>
                             <th>Last Run</th>
                             <th>Actions</th>
@@ -108,28 +104,28 @@
                     <tbody id="queries-tbody">
                         <tr>
                             <td><i class='bx bxl-reddit'></i> Reddit</td>
-                            <td>best CRM for startups</td>
+                            <!-- <td>best CRM for startups</td> -->
                             <td><span class="status-badge status-active">Active</span></td>
                             <td>Today 09:12</td>
                             <td><button class="btn btn-secondary btn-pause-resume">Pause</button><button class="btn btn-danger btn-delete">Delete</button></td>
                         </tr>
                         <tr>
                             <td><i class='bx bxl-linkedin-square'></i> LinkedIn</td>
-                            <td>B2B lead generation tips</td>
+                            <!-- <td>B2B lead generation tips</td> -->
                             <td><span class="status-badge status-paused">Paused</span></td>
                             <td>Yesterday 17:44</td>
                             <td><button class="btn btn-secondary btn-pause-resume">Resume</button><button class="btn btn-danger btn-delete">Delete</button></td>
                         </tr>
                         <tr>
                             <td><i class='bx bxl-twitter'></i> X/Twitter</td>
-                            <td>time tracking tools</td>
+                            <!-- <td>time tracking tools</td> -->
                             <td><span class="status-badge status-active">Active</span></td>
                             <td>Today 08:03</td>
                             <td><button class="btn btn-secondary btn-pause-resume">Pause</button><button class="btn btn-danger btn-delete">Delete</button></td>
                         </tr>
                         <tr>
                             <td><i class='bx bxl-facebook-square'></i> Facebook</td>
-                            <td>small business invoicing</td>
+                            <!-- <td>small business invoicing</td> -->
                             <td><span class="status-badge status-active">Active</span></td>
                             <td>2 days ago</td>
                             <td><button class="btn btn-secondary btn-pause-resume">Pause</button><button class="btn btn-danger btn-delete">Delete</button></td>

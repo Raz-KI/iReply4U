@@ -48,4 +48,4 @@ async def dashboard_page(request: Request,db: db_dependency):
 
 @app.get("/dashboard-data")
 async def get_dashboard_data(current_user: Annotated[dict, Depends(get_current_user)]):
-    return {"username": current_user["username"], "id": current_user["id"]}
+    return {"username": current_user["username"], "id": current_user["id"], "company_name": current_user["company_name"]}

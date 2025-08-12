@@ -208,7 +208,8 @@ document.addEventListener('click', function (e) {
                 const data = await res.json();
                 localStorage.setItem("token", data.access_token);
                 console.log("Login successful, token stored:", data.access_token);
-                localStorage.setItem("token", data.access_token);
+                console.log(data);
+            
                 window.location.href = "/dashboard";
             } catch (err) {
                 console.error(err);

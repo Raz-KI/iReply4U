@@ -23,7 +23,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const data = await res.json();
-        document.getElementById("companyName").textContent = `${data.username}`;
+        document.getElementById("companyName").textContent = `${data.company_name}`;
+        console.log(data);
     } catch (err) {
         console.error(err);
         // window.location.href = "/login.html";
@@ -99,7 +100,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const newRow = document.createElement('tr');
             newRow.innerHTML = `
                 <td><i class='bx ${platformInfo[platform].icon}'></i> ${platformInfo[platform].name}</td>
-                <td>${keywords}</td>
                 <td><span class="status-badge ${isActive ? 'status-active' : 'status-paused'}">${isActive ? 'Active' : 'Paused'}</span></td>
                 <td>Today ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
                 <td>
