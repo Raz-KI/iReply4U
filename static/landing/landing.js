@@ -4,14 +4,14 @@
 document.getElementById('signupForm').addEventListener('submit',async function(e) {
     e.preventDefault();
     
-    const firstName = document.getElementById('firstName').value;
-    const lastName = document.getElementById('lastName').value;
+    const company_name = document.getElementById('companyName').value;
+    // const lastName = document.getElementById('lastName').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const terms = document.getElementById('terms').checked;
 
     // Basic validation
-    if (!firstName || !lastName || !email || !password) {
+    if (!companyName || !email || !password) {
         alert('Please fill in all required fields.');
         return;
     }
@@ -30,7 +30,7 @@ document.getElementById('signupForm').addEventListener('submit',async function(e
     const response = await fetch("http://127.0.0.1:8000/auth/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, company_name})
     });
 
     if (response.ok) {
@@ -136,12 +136,8 @@ document.addEventListener('click', function (e) {
                 <form id="signupForm">
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label" for="firstName">First Name</label>
-                            <input type="text" id="firstName" class="form-input" placeholder="John" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" for="lastName">Last Name</label>
-                            <input type="text" id="lastName" class="form-input" placeholder="Doe" required>
+                            <label class="form-label" for="companyName">Company Name</label>
+                            <input type="text" id="companyName" class="form-input" placeholder="John" required>
                         </div>
                     </div>
 

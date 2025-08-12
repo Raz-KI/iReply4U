@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
 from database import SessionLocal
-from models import Users
+from models import Customer
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -21,9 +21,11 @@ ALGORITHM = 'HS256'
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/login')
 
+# Pydantic Model for auto validation
 class CreateUserRequest(BaseModel):
     email: str
     password: str
+    company_name: str
 
 class Token(BaseModel):
     access_token: str
@@ -38,12 +40,15 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
+# The request at /auth will come here and the json will be automatically converted to CreateUserRequest
+# This is the pydantic model which is useful for catching errors meaningfully
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def create_user(create_user_request: CreateUserRequest,
                        db: db_dependency):
-    create_user_model = Users(
+    create_user_model = Customer(
         email=create_user_request.email,
-        hashed_password=bcrypt_context.hash(create_user_request.password)
+        hashed_password=bcrypt_context.hash(create_user_request.password),
+        company_name=create_user_request.company_name
     )
 
     db.add(create_user_model)
@@ -64,7 +69,7 @@ async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm,
     return {'access_token': token, "token_type": "bearer"}
 
 def authenticate_user(email:str, password:str, db):
-    user = db.query(Users).filter(Users.email == email).first()
+    user = db.query(Customer).filter(Customer.email == email).first()
     if not user:
         return False
     if not bcrypt_context.verify(password,user.hashed_password):

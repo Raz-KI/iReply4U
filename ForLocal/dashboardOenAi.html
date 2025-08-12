@@ -1,0 +1,596 @@
+<!-- Open AI -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reply4U — Dashboard</title>
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome for icons (or replace with SVGs if you prefer) -->
+  <script src="https://kit.fontawesome.com/7b2c1f7b0a.js" crossorigin="anonymous"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root{
+      --bg:#0f0f14;
+      --panel:#131318;
+      --muted:#9aa0a6;
+      --card:#17171b;
+      --accent1:#6b4cf6; /* primary purple */
+      --accent2:#8e75ff; /* gradient secondary */
+      --glass: rgba(255,255,255,0.03);
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: linear-gradient(90deg, rgba(25,18,42,1) 0%, rgba(18,14,28,1) 100%);
+      color:#e6e8eb;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    /* layout */
+    .app {
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      gap:24px;
+      min-height:100vh;
+      padding:28px;
+    }
+
+    /* sidebar */
+    .sidebar{
+      background: linear-gradient(180deg,var(--accent1), var(--accent2));
+      border-radius:20px;
+      padding:22px;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      min-height:calc(100vh - 56px);
+      box-shadow: 0 8px 28px rgba(11,8,20,0.6), inset 0 -2px 6px rgba(255,255,255,0.02);
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .logo {
+      width:44px;height:44px;border-radius:10px;background:rgba(255,255,255,0.12);
+      display:flex;align-items:center;justify-content:center;font-weight:700;color:white;
+      box-shadow:0 6px 18px rgba(11,8,20,0.4);
+    }
+    .brand h1{font-size:16px;margin:0;font-weight:700;letter-spacing:0.2px;color:#fff}
+    .nav{
+      margin-top:6px; display:flex;flex-direction:column; gap:10px;
+    }
+    .nav a{
+      display:flex;align-items:center;gap:12px;padding:12px;border-radius:10px;color:rgba(255,255,255,0.92);
+      text-decoration:none;font-weight:600;font-size:14px;background:transparent;
+    }
+    .nav a:hover{background: rgba(255,255,255,0.06)}
+    .nav a.active{background: rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.03)}
+    .nav svg{opacity:0.95}
+
+    .sidebar-bottom{margin-top:auto;display:flex;gap:8px;flex-direction:column}
+    .small-muted{font-size:12px;color:rgba(255,255,255,0.7)}
+
+    /* main */
+    .main {
+      padding:14px;
+    }
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;
+    }
+    .topbar-left{display:flex;align-items:center;gap:12px;}
+    .search-input{
+      background:var(--card); border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.02);
+      display:flex;align-items:center;gap:8px;color:var(--muted);
+    }
+    .top-actions{display:flex;align-items:center;gap:12px;}
+
+    .avatar{
+      width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#ffb86b,#ff7ab6);
+      display:inline-block;border:2px solid rgba(255,255,255,0.06);
+    }
+
+    /* stats row */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 6px 18px rgba(8,7,12,0.6);
+      display:flex;align-items:center;gap:14px;
+    }
+    .card .icon{
+      min-width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;
+      background:linear-gradient(135deg,var(--accent1),var(--accent2));
+      font-size:18px;
+      box-shadow:0 6px 18px rgba(107,76,246,0.12);
+    }
+    .card .meta{display:flex;flex-direction:column}
+    .card .meta .num{font-weight:800;font-size:20px}
+    .card .meta .label{font-size:13px;color:var(--muted)}
+
+    /* panel sections */
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,0.02);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    }
+    .panel h3{margin:0 0 10px 0;font-size:16px;color:#efeef2}
+    .table{width:100%;border-collapse:collapse;font-size:14px}
+    .table thead th{font-weight:700;color:var(--muted);text-align:left;padding:12px 8px}
+    .table tbody td{padding:12px 8px;border-top:1px solid rgba(255,255,255,0.02);vertical-align:middle}
+    .platform-icon{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:center;margin-right:8px}
+
+    .actions button{
+      background:transparent;border:1px solid rgba(255,255,255,0.04);padding:7px 10px;border-radius:8px;color:var(--muted);cursor:pointer;margin-left:8px;
+    }
+    .actions button.primary{
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));border:none;color:white;padding:8px 12px;
+      box-shadow:0 8px 20px rgba(107,76,246,0.14);
+    }
+
+    /* recent replies */
+    .replies-list{display:flex;flex-direction:column;gap:10px;max-height:240px;overflow:auto;padding-right:8px}
+    .reply-row{display:grid;grid-template-columns:80px 1fr 240px 80px 110px;gap:12px;align-items:center;padding:10px;border-radius:10px}
+    .reply-row:nth-child(odd){background:rgba(255,255,255,0.01)}
+
+    /* chart area */
+    .chart-panel{height:320px;padding:14px}
+
+    /* modal base */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(5,5,8,0.6);display:none;align-items:center;justify-content:center;z-index:999}
+    .modal{width:720px;max-width:94%;background:linear-gradient(180deg, #141417,#17171b);border-radius:14px;padding:18px;border:1px solid rgba(255,255,255,0.03);box-shadow:0 30px 80px rgba(3,3,6,0.7)}
+    .modal h4{margin:0 0 8px 0}
+    .field{margin-bottom:12px}
+    .field label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted)}
+    .field input, .field select, .field textarea{
+      width:100%;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.02);color:inherit;
+    }
+    .row{display:flex;gap:10px}
+    .toggle{
+      display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+    }
+
+    /* small screens */
+    @media (max-width:1000px){
+      .app{grid-template-columns: 72px 1fr;padding:16px}
+      .nav a span.label {display:none}
+      .stats-row{grid-template-columns:repeat(2,1fr)}
+      .reply-row{grid-template-columns:60px 1fr 140px;gap:8px}
+    }
+    @media (max-width:640px){
+      .app{grid-template-columns:1fr;padding:12px}
+      .sidebar{display:none}
+      .stats-row{grid-template-columns:1fr}
+      .topbar{flex-direction:column;align-items:stretch;gap:10px}
+    }
+
+    /* utility */
+    .muted{color:var(--muted)}
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:700;
+    }
+    .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+    .btn-primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;box-shadow:0 10px 30px rgba(107,76,246,0.12)}
+    .small{font-size:13px}
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Reply4U dashboard">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" aria-label="Sidebar navigation">
+      <div class="brand">
+        <div class="logo">R4U</div>
+        <div>
+          <h1>Reply4U</h1>
+          <div class="small-muted">Social outreach automation</div>
+        </div>
+      </div>
+
+      <nav class="nav" aria-label="Main">
+        <a href="#" class="active" data-section="dashboard"><i class="fa fa-tachometer-alt"></i><span class="label">Dashboard</span></a>
+        <a href="#" data-section="queries"><i class="fa fa-search"></i><span class="label">Search Queries</span></a>
+        <a href="#" data-section="replies"><i class="fa fa-reply"></i><span class="label">Replies</span></a>
+        <a href="#" data-section="analytics"><i class="fa fa-chart-line"></i><span class="label">Analytics</span></a>
+        <a href="#" data-section="settings"><i class="fa fa-cog"></i><span class="label">Settings</span></a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="small-muted">Plan: Pro · Expires in 14 days</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost small">Upgrade</button>
+          <button class="btn btn-ghost small">Support</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" id="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <div class="search-input" role="search" aria-label="Search">
+            <i class="fa fa-search"></i>
+            <input id="globalSearch" placeholder="Search queries, replies..." style="background:transparent;border:none;outline:none;color:inherit" aria-label="Search"/>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <div class="small muted" id="modeLabel">Dark</div>
+          <button id="themeToggle" class="btn btn-ghost" aria-pressed="true" title="Toggle dark mode"><i class="fa fa-moon"></i></button>
+
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="avatar" aria-hidden="true"></div>
+            <div class="small-muted">Alex Doe <i class="fa fa-caret-down"></i></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <section class="stats-row" aria-label="Overview statistics">
+        <div class="card">
+          <div class="icon"><i class="fa fa-search"></i></div>
+          <div class="meta"><div class="num" id="totalSearches">1,248</div><div class="label">Total Searches</div></div>
+        </div>
+        <div class="card">
+          <div class="icon"><i class="fa fa-robot"></i></div>
+          <div class="meta"><div class="num" id="repliesGenerated">3,672</div><div class="label">Replies Generated</div></div>
+        </div>
+        <div class="card">
+          <div class="icon"><i class="fa fa-paper-plane"></i></div>
+          <div class="meta"><div class="num" id="repliesPosted">2,910</div><div class="label">Replies Posted</div></div>
+        </div>
+        <div class="card">
+          <div class="icon"><i class="fa fa-chart-line"></i></div>
+          <div class="meta"><div class="num" id="engagementRate">12.4%</div><div class="label">Engagement Rate</div></div>
+        </div>
+      </section>
+
+      <!-- Active Queries -->
+      <section class="panel" aria-labelledby="activeQueriesTitle" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <h3 id="activeQueriesTitle">Active Search Queries</h3>
+          <div>
+            <button class="btn btn-primary" id="openNewQuery"><i class="fa fa-plus"></i> New Search Query</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px; overflow:auto">
+          <table class="table" role="table" aria-label="Active search queries">
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Query</th>
+                <th>Status</th>
+                <th>Last Run</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="queriesTable">
+              <!-- populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Recent replies + chart -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <section class="panel" aria-labelledby="recentRepliesTitle">
+          <h3 id="recentRepliesTitle">Recent Replies</h3>
+
+          <div class="replies-list" id="repliesList" role="list" aria-label="Recent replies">
+            <!-- JS populated -->
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Engagement Chart</h3>
+          <div class="chart-panel">
+            <canvas id="engagementChart" aria-label="Engagement rate over time" role="img"></canvas>
+          </div>
+        </section>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- NEW QUERY MODAL -->
+  <div class="modal-backdrop" id="modalBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 id="modalTitle">New Search Query</h4>
+        <button id="closeModal" class="btn btn-ghost" aria-label="Close modal"><i class="fa fa-times"></i></button>
+      </div>
+
+      <div class="field">
+        <label for="platformSelect">Platform</label>
+        <select id="platformSelect" aria-label="Select platform">
+          <option>Reddit</option>
+          <option>LinkedIn</option>
+          <option>X/Twitter</option>
+          <option>Facebook</option>
+          <option>Instagram</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="keywordsInput">Keywords</label>
+        <input id="keywordsInput" placeholder="e.g. time tracking for freelancers" />
+      </div>
+
+      <div class="field" style="display:flex;align-items:center;justify-content:space-between">
+        <div class="toggle"><label class="small-muted">Active</label><input type="checkbox" id="activeCheckbox" checked/></div>
+        <div style="display:flex;gap:8px">
+          <button id="cancelModal" class="btn btn-ghost">Cancel</button>
+          <button id="saveQuery" class="btn btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW / EDIT REPLY MODAL -->
+  <div class="modal-backdrop" id="replyBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="replyTitle">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <h4 id="replyTitle">View / Edit Reply</h4>
+        <button id="closeReplyModal" class="btn btn-ghost" aria-label="Close modal"><i class="fa fa-times"></i></button>
+      </div>
+
+      <div class="field">
+        <label for="originalPost">Post</label>
+        <input id="originalPost" readonly />
+      </div>
+
+      <div class="field">
+        <label for="generatedReply">Generated Reply</label>
+        <textarea id="generatedReply" rows="6"></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px">
+        <button id="closeReply" class="btn btn-ghost">Close</button>
+        <button id="approveReply" class="btn btn-ghost">Approve</button>
+        <button id="postReply" class="btn btn-primary">Post</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /***********************
+     * Placeholder data
+     ***********************/
+    const queries = [
+      { id:1, platform:'Reddit', query:'best CRM for startups', status:'Active', lastRun:'Today 09:12' },
+      { id:2, platform:'LinkedIn', query:'B2B lead generation tips', status:'Paused', lastRun:'Yesterday 17:44' },
+      { id:3, platform:'X/Twitter', query:'time tracking tools', status:'Active', lastRun:'Today 08:03' },
+      { id:4, platform:'Facebook', query:'small business invoicing', status:'Active', lastRun:'2 days ago' }
+    ];
+
+    const replies = [
+      { id:1, platform:'Reddit', post:'I need a simple tool to manage client feedback...', reply:'You might like Reply4U — we draft helpful responses that keep the convo moving...', status:'Draft', date:'Today' },
+      { id:2, platform:'LinkedIn', post:'Struggling to increase engagement on our product posts.', reply:'Try jumpstarting discussions by answering related pain points. Reply4U finds them for you...', status:'Approved', date:'Today' },
+      { id:3, platform:'X/Twitter', post:'Any suggestions for lightweight CRM tools?', reply:'If you want quick, authentic replies to potential users, Reply4U can help you join the conversation...', status:'Posted', date:'Yesterday' },
+    ];
+
+    /***********************
+     * Fill queries table
+     ***********************/
+    function renderQueries(){
+      const tbody = document.getElementById('queriesTable');
+      tbody.innerHTML = '';
+      for (const q of queries){
+        const tr = document.createElement('tr');
+
+        const platformCell = document.createElement('td');
+        platformCell.innerHTML = `<div style="display:flex;align-items:center"><div class="platform-icon" aria-hidden="true"><i class="fa fa-globe"></i></div><div>${q.platform}</div></div>`;
+        tr.appendChild(platformCell);
+
+        const qCell = document.createElement('td');
+        qCell.textContent = q.query;
+        tr.appendChild(qCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.innerHTML = `<span class="small-muted">${q.status}</span>`;
+        tr.appendChild(statusCell);
+
+        const lastRunCell = document.createElement('td');
+        lastRunCell.textContent = q.lastRun;
+        tr.appendChild(lastRunCell);
+
+        const actionsCell = document.createElement('td');
+        actionsCell.className = 'actions';
+        const pauseBtn = document.createElement('button');
+        pauseBtn.textContent = q.status === 'Active' ? 'Pause' : 'Resume';
+        pauseBtn.onclick = () => toggleQuery(q.id);
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => deleteQuery(q.id);
+        actionsCell.appendChild(pauseBtn);
+        actionsCell.appendChild(deleteBtn);
+        tr.appendChild(actionsCell);
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    function toggleQuery(id){
+      const q = queries.find(x=>x.id===id);
+      if(!q) return;
+      q.status = q.status === 'Active' ? 'Paused' : 'Active';
+      renderQueries();
+    }
+    function deleteQuery(id){
+      const idx = queries.findIndex(x=>x.id===id);
+      if(idx>-1){ queries.splice(idx,1); renderQueries(); }
+    }
+
+    /***********************
+     * Fill replies list
+     ***********************/
+    function renderReplies(){
+      const container = document.getElementById('repliesList');
+      container.innerHTML='';
+      for(const r of replies){
+        const row = document.createElement('div');
+        row.className = 'reply-row panel';
+        row.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="platform-icon"><i class="fa fa-comment"></i></div>
+          </div>
+          <div>
+            <div style="font-weight:700">${r.platform}</div>
+            <div class="muted small">${r.post}</div>
+          </div>
+          <div style="color:var(--muted)">${r.reply}</div>
+          <div>${r.status}</div>
+          <div style="display:flex;justify-content:flex-end">
+            <button class="btn btn-ghost small" onclick="openReply(${r.id})">View/Edit</button>
+          </div>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    /***********************
+     * Chart
+     ***********************/
+    function createChart(){
+      const ctx = document.getElementById('engagementChart').getContext('2d');
+      const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+      const data = [11.8,12.0,12.4,12.1,12.7,13.4,12.3];
+
+      const gradient = ctx.createLinearGradient(0,0,0,200);
+      gradient.addColorStop(0, 'rgba(139,117,255,0.28)');
+      gradient.addColorStop(1, 'rgba(107,76,246,0.02)');
+
+      new Chart(ctx, {
+        type:'line',
+        data:{
+          labels,
+          datasets:[{
+            label:'Engagement Rate',
+            data,
+            fill:true,
+            backgroundColor:gradient,
+            borderColor:'#a78bfa',
+            tension:0.35,
+            pointRadius:3,
+            pointBackgroundColor:'#a78bfa'
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false}},
+          scales:{
+            x:{grid:{display:false}, ticks:{color:'rgba(255,255,255,0.6)'}},
+            y:{grid:{color:'rgba(255,255,255,0.03)'}, ticks:{color:'rgba(255,255,255,0.6)'}}
+          },
+          responsive:true,
+          maintainAspectRatio:false
+        }
+      });
+    }
+
+    /***********************
+     * Modals & events
+     ***********************/
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const replyBackdrop = document.getElementById('replyBackdrop');
+
+    document.getElementById('openNewQuery').addEventListener('click', ()=> {
+      modalBackdrop.style.display = 'flex';
+      modalBackdrop.setAttribute('aria-hidden','false');
+    });
+    document.getElementById('closeModal').addEventListener('click', closeNewQueryModal);
+    document.getElementById('cancelModal').addEventListener('click', closeNewQueryModal);
+
+    function closeNewQueryModal(){
+      modalBackdrop.style.display = 'none';
+      modalBackdrop.setAttribute('aria-hidden','true');
+      document.getElementById('keywordsInput').value='';
+      document.getElementById('activeCheckbox').checked=true;
+    }
+
+    document.getElementById('saveQuery').addEventListener('click', ()=>{
+      const platform = document.getElementById('platformSelect').value;
+      const keywords = document.getElementById('keywordsInput').value.trim();
+      const active = document.getElementById('activeCheckbox').checked;
+      if(!keywords){ alert('Please enter keywords'); return; }
+      const newQ = { id: Date.now(), platform, query:keywords, status: active?'Active':'Paused', lastRun:'Never' };
+      queries.unshift(newQ);
+      renderQueries();
+      closeNewQueryModal();
+    });
+
+    /* reply modal */
+    function openReply(id){
+      const r = replies.find(x=>x.id===id);
+      if(!r) return;
+      document.getElementById('originalPost').value = r.post;
+      document.getElementById('generatedReply').value = r.reply;
+      replyBackdrop.style.display='flex';
+      replyBackdrop.setAttribute('aria-hidden','false');
+
+      // wire buttons to simulate actions
+      document.getElementById('postReply').onclick = () => {
+        r.status = 'Posted';
+        r.reply = document.getElementById('generatedReply').value;
+        renderReplies();
+        closeReplyModal();
+      };
+      document.getElementById('approveReply').onclick = () => {
+        r.status = 'Approved';
+        r.reply = document.getElementById('generatedReply').value;
+        renderReplies();
+        closeReplyModal();
+      };
+    }
+    function closeReplyModal(){
+      replyBackdrop.style.display='none';
+      replyBackdrop.setAttribute('aria-hidden','true');
+    }
+    document.getElementById('closeReplyModal').addEventListener('click', closeReplyModal);
+    document.getElementById('closeReply').addEventListener('click', closeReplyModal);
+
+    /***********************
+     * Theme toggle (keeps dark as base)
+     ***********************/
+    const themeToggle = document.getElementById('themeToggle');
+    const modeLabel = document.getElementById('modeLabel');
+    let dark = true;
+    themeToggle.addEventListener('click', ()=>{
+      dark = !dark;
+      if(dark){
+        document.documentElement.style.setProperty('--bg','#0f0f14');
+        modeLabel.textContent = 'Dark';
+        themeToggle.innerHTML = '<i class="fa fa-moon"></i>';
+      } else {
+        document.documentElement.style.setProperty('--bg','#ffffff');
+        modeLabel.textContent = 'Light';
+        themeToggle.innerHTML = '<i class="fa fa-sun"></i>';
+      }
+    });
+
+    /***********************
+     * Init
+     ***********************/
+    document.addEventListener('DOMContentLoaded', ()=>{
+      renderQueries();
+      renderReplies();
+      createChart();
+    });
+
+    // close modal on backdrop click
+    modalBackdrop.addEventListener('click', (e)=>{ if(e.target === modalBackdrop) closeNewQueryModal(); });
+    replyBackdrop.addEventListener('click', (e)=>{ if(e.target === replyBackdrop) closeReplyModal(); });
+
+  </script>
+</body>
+</html>

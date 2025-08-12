@@ -23,7 +23,7 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
-user_dependency = Annotated[models.Users, Depends(get_current_user)]
+user_dependency = Annotated[models.Customer, Depends(get_current_user)]
 
 # Serve static files if needed later
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -40,13 +40,9 @@ async def root():
 async def landing_page(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
-# # Protected dashboard
-# @app.get("/dashboard")
-# async def dashboard_page(request: Request, user: user_dependency, db: db_dependency):
-#     return templates.TemplateResponse("dashboard.html", {"request": request, "user": user})
-
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard_page(request: Request):
+async def dashboard_page(request: Request,db: db_dependency):
+    # company_name = db.query()
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
