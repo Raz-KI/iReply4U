@@ -37,7 +37,9 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"), nullable=False)
     product_desc = Column(Text, nullable=False)
+    is_active = Column(String, default="active")  # active, inactive
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
+    platform = Column(String, nullable=False)  # e.g., 'reddit', 'twitter', 'facebook'
 
     customer = relationship("Customer", back_populates="products")
     subreddits = relationship("Subreddit", back_populates="product", cascade="all, delete")

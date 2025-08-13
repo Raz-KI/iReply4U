@@ -10,6 +10,8 @@ from fastapi.templating import Jinja2Templates
 from typing import List, Annotated
 from pydantic import BaseModel #used for data validation and useful error messages
 from auth import get_current_user
+import datetime
+from models import Product, Customer
 
 app = FastAPI()
 app.include_router(auth.router)
@@ -49,3 +51,47 @@ async def dashboard_page(request: Request,db: db_dependency):
 @app.get("/dashboard-data")
 async def get_dashboard_data(current_user: Annotated[dict, Depends(get_current_user)]):
     return {"username": current_user["username"], "id": current_user["id"], "company_name": current_user["company_name"]}
+
+class SearchCreate(BaseModel):
+    platform: str
+    keywords: str
+    is_active: bool
+
+@app.post("/api/new_query")
+def create_search(search: SearchCreate,db: db_dependency, current_user: Annotated[dict, Depends(get_current_user)]):
+    # Whenever we include user_dependency, it will check for authorization token so in js (or where we call this API) 
+    # we need to send the token in the header like this
+    # headers: {
+    #            "Authorization": `Bearer ${token}`,
+    #            "Content-Type": "application/json"
+    #          },
+    create_new_query = Product(
+        customer_id=current_user["id"],
+        product_desc=search.keywords,
+        created_at=datetime.datetime.utcnow(),
+        is_active=search.is_active,
+        platform=search.platform
+    )
+    db.add(create_new_query)
+    db.commit()
+    
+    return {
+        "message": "Search query saved successfully",
+        "data": search.dict(),
+        "query_id": create_new_query.id
+    }
+
+@app.get("/api/get_queries")
+def get_queries(db: db_dependency, current_user: user_dependency):
+    queries = db.query(Product).filter(Product.customer_id == current_user["id"]).all()
+    return {
+        "queries": [
+            {
+                "id": query.id,
+                "product_desc": query.product_desc,
+                "is_active": query.is_active,
+                "created_at": query.created_at,
+                "platform": query.platform,
+            } for query in queries
+        ]
+    }

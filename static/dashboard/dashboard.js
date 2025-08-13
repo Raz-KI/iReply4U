@@ -30,8 +30,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         // window.location.href = "/login.html";
     }
 });
-document.addEventListener('DOMContentLoaded', function () {
-
+document.addEventListener('DOMContentLoaded', async function () {
+    const token = localStorage.getItem("token");
     //=========== GLOBAL ELEMENT SELECTORS & STATE ===========//
     const newSearchModal = document.getElementById('newSearchModal');
     const viewEditModal = document.getElementById('viewEditModal');
@@ -64,6 +64,51 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     }
+    // Retrieve existing queries from the server
+    try {
+        const res = await fetch("/api/get_queries", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            alert("Error fetching queries: " + errText);
+            return;
+        }
+        else {
+            const data = await res.json();
+            console.log("Fetched queries:", data);
+            if (data && data.queries) {
+                data.queries.forEach(query => {
+                    const platformInfo = {
+                        reddit: { icon: 'bxl-reddit', name: 'Reddit' },
+                        linkedin: { icon: 'bxl-linkedin-square', name: 'LinkedIn' },
+                        twitter: { icon: 'bxl-twitter', name: 'X/Twitter' },
+                        facebook: { icon: 'bxl-facebook-square', name: 'Facebook' },
+                    };
+                    // console.log("Query:", query,query.platform);
+                    const newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td><i class='bx ${platformInfo[query.platform].icon}'></i> ${platformInfo[query.platform].name}</td>
+                        <td>${query.id}</td>
+                        <td><span class="status-badge ${query.is_active ? 'status-active' : 'status-paused'}">${query.is_active ? 'Active' : 'Paused'}</span></td>
+                        <td>${query.product_desc}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-pause-resume">${query.is_active ? 'Pause' : 'Resume'}</button>
+                            <button class="btn btn-danger btn-delete">Delete</button>
+                        </td>
+                    `;
+                    queriesTbody.appendChild(newRow);
+                });
+            }
+        }
+    } catch (err) {
+        console.error("Error fetching queries:", err);
+        alert("Could not connect to server.");
+    }
     
     if(newSearchBtn) newSearchBtn.addEventListener('click', () => openModal(newSearchModal));
     
@@ -78,7 +123,8 @@ document.addEventListener('DOMContentLoaded', function () {
     
     //=========== ACTIVE SEARCH QUERIES LOGIC ===========//
     if (newSearchForm) {
-        newSearchForm.addEventListener('submit', function(event) {
+        // console.log("Token:", token);
+        newSearchForm.addEventListener('submit',async function(event) {
             event.preventDefault(); 
             const platformSelect = document.getElementById('platform');
             const keywordsInput = document.getElementById('keywords');
@@ -97,19 +143,63 @@ document.addEventListener('DOMContentLoaded', function () {
                 twitter: { icon: 'bxl-twitter', name: 'X/Twitter' },
                 facebook: { icon: 'bxl-facebook-square', name: 'Facebook' },
             };
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td><i class='bx ${platformInfo[platform].icon}'></i> ${platformInfo[platform].name}</td>
-                <td><span class="status-badge ${isActive ? 'status-active' : 'status-paused'}">${isActive ? 'Active' : 'Paused'}</span></td>
-                <td>Today ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                <td>
-                    <button class="btn btn-secondary btn-pause-resume">${isActive ? 'Pause' : 'Resume'}</button>
-                    <button class="btn btn-danger btn-delete">Delete</button>
-                </td>
-            `;
-            queriesTbody.prepend(newRow);
-            newSearchForm.reset();
-            closeModal(newSearchModal);
+            
+            try {
+                // console.log("Token:", token);
+                const res = await fetch("/api/new_query", {
+                    method: "POST",
+                    headers: {
+                        // Whenever authenticated route is accessed, we need to send the token
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        platform: platform,
+                        keywords: keywords,
+                        is_active: isActive,
+                    })
+                    
+                    
+                });
+                const data = await res.json();
+                console.log("Response data:", data.query_id,data);
+    
+                if (!res.ok) {
+                    const errText = await res.text();
+                    alert("Error: " + errText);
+                    return;
+                }
+    
+                
+                console.log("Saved successfully:", data);
+    
+                // ✅ Update UI only after backend confirms
+                const platformInfo = {
+                    reddit: { icon: 'bxl-reddit', name: 'Reddit' },
+                    linkedin: { icon: 'bxl-linkedin-square', name: 'LinkedIn' },
+                    twitter: { icon: 'bxl-twitter', name: 'X/Twitter' },
+                    facebook: { icon: 'bxl-facebook-square', name: 'Facebook' },
+                };
+    
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td><i class='bx ${platformInfo[platform].icon}'></i> ${platformInfo[platform].name}</td>
+                    <td>${data.query_id}</td>
+                    <td><span class="status-badge ${isActive ? 'status-active' : 'status-paused'}">${isActive ? 'Active' : 'Paused'}</span></td>
+                    <td>${keywords}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-pause-resume">${isActive ? 'Pause' : 'Resume'}</button>
+                        <button class="btn btn-danger btn-delete">Delete</button>
+                    </td>
+                `;
+                queriesTbody.prepend(newRow);
+                newSearchForm.reset();
+                closeModal(newSearchModal);
+    
+            } catch (err) {
+                console.error("Network error:", err);
+                alert("Could not connect to server.");
+            }
         });
     }
     
