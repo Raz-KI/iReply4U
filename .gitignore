@@ -2,3 +2,4 @@
 venv/
 ForLocal/
 __pycache__/
+test.py
