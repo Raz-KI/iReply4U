@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialReach - AI-Powered Outreach</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='landing/landing.css') }}">
+    <script src="{{ url_for('static', path='landing/landing.js') }}" defer></script>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">SR</div>
+            SocialReach
+        </div>
+        <nav class="nav">
+            <a href="#">Home</a>
+            <a href="#">Dashboard</a>
+            <a href="#">Campaigns</a>
+            <a class="login-button" href="#" data-action="login">Login</a>
+            <a href="#" class="get-started-btn">Get Started</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        <section class="left-section">
+            <h1 class="main-title">
+                Start Growing With <span class="ai-powered">AI-Powered</span> Outreach
+            </h1>
+            <p class="subtitle">
+                Join hundreds of companies using SocialReach to turn social conversations into customers.
+            </p>
+
+            <h3 class="features-title">What you get with SocialReach:</h3>
+            <ul class="features-list">
+                <li class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    Find 100+ relevant conversations daily
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    AI-generated natural replies
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    Auto-posting to Reddit & Twitter
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    Real-time performance analytics
+                </li>
+                <li class="feature-item">
+                    <div class="feature-icon">✓</div>
+                    Campaign management dashboard
+                </li>
+            </ul>
+
+            <div class="trial-box">
+                <div class="trial-title">
+                    <div class="trial-icon">🎯</div>
+                    Free 14-day trial
+                </div>
+                <p class="trial-description">
+                    No credit card required. Start finding and engaging with your ideal customers in minutes.
+                </p>
+            </div>
+        </section>
+        {% if message %}
+            <p style="color: green; font-weight: bold;">{{ message }}</p>
+        {% endif %}
+
+        <section class="right-section">
+            <div class="form-container" id="signupLoginForm">
+                <h2 class="form-title">Create Account</h2>
+                <p class="form-subtitle">Start your free trial today</p>
+
+                <form id="signupForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="companyName">Company Name</label>
+                            <input type="text" id="companyName" class="form-input" placeholder="John" required>
+                        </div>
+                        <!-- <div class="form-group">
+                            <label class="form-label" for="lastName">Last Name</label>
+                            <input type="text" id="lastName" class="form-input" placeholder="Doe" required>
+                        </div> -->
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="email">Email</label>
+                        <input type="email" id="email" class="form-input" placeholder="you@company.com" required>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label" for="password">Password</label>
+                        <input type="password" id="password" class="form-input" placeholder="Create a strong password" required>
+                        <p class="password-requirements">Must be at least 8 characters with a mix of letters and numbers</p>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="terms" class="checkbox" required>
+                        <label for="terms" class="checkbox-label">
+                            I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Start Free Trial →</button>
+                </form>
+
+                <div class="divider">OR CONTINUE WITH</div>
+
+                <div class="social-buttons">
+                    <a href="#" class="social-btn">
+                        <span>🔍</span>
+                        Continue with Google
+                    </a>
+                    <a href="#" class="social-btn">
+                        <span>📘</span>
+                        Continue with Facebook
+                    </a>
+                </div>
+
+                <div class="signin-link">
+                    Already have an account? <a class="login-button" href="#" data-action="login">Log in</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
+</html>

@@ -1,0 +1,4 @@
+.env
+venv/
+ForLocal/
+__pycache__/

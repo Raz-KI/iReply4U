@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialReach - AI-Powered Outreach</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='dashboard/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='dashboard/dashboard.css') }}">
+    <script src="{{ url_for('static', path='dashboard/dashboard.js') }}" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <a href="#" class="logo">Reply4U</a>
+            </div>
+            <ul class="sidebar-nav">
+                <li>
+                    <a href="#" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a>
+                </li>
+                <li>
+                    <a href="#"><i class='bx bx-search'></i> Search Queries</a>
+                </li>
+                <li>
+                    <a href="#"><i class='bx bx-reply-all'></i> Replies</a>
+                </li>
+                <li>
+                    <a href="#"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a>
+                </li>
+                <li>
+                    <a href="#"><i class='bx bx-cog'></i> Settings</a>
+                </li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                     <h1 class="page-title">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="theme-switcher">
+                        <input type="checkbox" id="theme-toggle" class="theme-toggle-checkbox">
+                        <label for="theme-toggle" class="theme-toggle-label"></label>
+                    </div>
+                    <div class="user-profile">
+                        <img src="https://i.pravatar.cc/40?u=alexdoe" alt="Alex Doe">
+                        <span id="companyName">{{company_name}}</span>
+                        <i class='bx bx-chevron-down'></i>
+                    </div>
+                </div>
+            </header>
+
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="card-icon search-icon"><i class='bx bx-search'></i></div>
+                    <div class="card-info">
+                        <p class="card-value">1,248</p>
+                        <p class="card-label">Total Searches</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="card-icon generated-icon"><i class='bx bxs-bot'></i></div>
+                    <div class="card-info">
+                        <p class="card-value">3,672</p>
+                        <p class="card-label">Replies Generated</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="card-icon posted-icon"><i class='bx bxs-send'></i></div>
+                    <div class="card-info">
+                        <p class="card-value">2,910</p>
+                        <p class="card-label">Replies Posted</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="card-icon engagement-icon"><i class='bx bxs-pie-chart-alt-2'></i></div>
+                    <div class="card-info">
+                        <p class="card-value">12.4%</p>
+                        <p class="card-label">Engagement Rate</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-table">
+                <div class="table-header">
+                    <h2>Active Search Queries</h2>
+                    <button class="btn btn-primary" id="newSearchBtn"><i class='bx bx-plus'></i> New Search Query</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Query ID</th>
+                            <th>Status</th>
+                            <th>Name</th>
+                            <th>Query</th>
+                            <th>Link</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queries-tbody">
+                       <!-- Queries from the database will be shown here -->
+                    </tbody>
+                </table>
+            </section>
+            
+            <section class="content-table">
+                 <div class="table-header">
+                    <h2>Recent Replies</h2>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Post Preview</th>
+                            <th>Reply Preview</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="replies-tbody">
+                        <tr>
+                            <td><i class='bx bxl-reddit'></i> Reddit</td>
+                            <td class="post-preview" data-full-text="I need a simple tool to manage client feedback...">I need a simple tool to manage client feedback...</td>
+                            <td class="reply-preview" data-full-text="You might like Reply4U — we draft helpful responses that keep the convo moving...">You might like Reply4U — we draft...</td>
+                            <td><span class="status-badge status-draft">Draft</span></td>
+                            <td>Today</td>
+                            <td><button class="btn btn-secondary btn-view-edit">View/Edit</button></td>
+                        </tr>
+                        <tr>
+                            <td><i class='bx bxl-linkedin-square'></i> LinkedIn</td>
+                            <td class="post-preview" data-full-text="Struggling to increase engagement on our product posts. Any tips?">Struggling to increase engagement...</td>
+                            <td class="reply-preview" data-full-text="Try jumpstarting discussions by answering related pain points. Reply4U finds them for you...">Try jumpstarting discussions by...</td>
+                            <td><span class="status-badge status-approved">Approved</span></td>
+                            <td>Today</td>
+                            <td><button class="btn btn-secondary btn-view-edit">View/Edit</button></td>
+                        </tr>
+                         <tr>
+                            <td><i class='bx bxl-twitter'></i> X/Twitter</td>
+                            <td class="post-preview" data-full-text="Any suggestions for lightweight CRM tools? We're a small team.">Any suggestions for lightweight...</td>
+                            <td class="reply-preview" data-full-text="If you want quick, authentic replies to potential leads, Reply4U can help you join the conversation instantly.">If you want quick, authentic replies...</td>
+                            <td><span class="status-badge status-posted">Posted</span></td>
+                            <td>Yesterday</td>
+                            <td><button class="btn btn-secondary btn-view-edit">View/Edit</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="chart-container">
+                 <h2>Engagement Chart</h2>
+                 <canvas id="engagementChart"></canvas>
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-overlay" id="newSearchModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>New Search Query</h2>
+                <button class="close-modal-btn"><i class='bx bx-x'></i></button>
+            </div>
+            <form id="newSearchForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="platform">Platform</label>
+                        <select id="platform" name="platform">
+                            <option value="reddit">Reddit</option>
+                            <option value="linkedin">LinkedIn</option>
+                            <option value="twitter">X/Twitter</option>
+                            <option value="facebook">Facebook</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productName">Product Name</label>
+                        <input type="text" id="productName" name="productName" placeholder="e.g. Reply4U" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="keywords">Description</label>
+                        <input type="text" id="keywords" name="keywords" placeholder="e.g. time tracking for freelancers" required>
+                    </div>
+            
+                    <div class="form-group">
+                        <label for="websiteLink">Website Link</label>
+                        <input type="text" id="websiteLink" name="websiteLink" placeholder="https://yourproduct.com" required>
+                    </div>
+            
+                    <div class="form-group form-group-toggle">
+                        <label for="active-toggle" class="toggle-switch">
+                            <input type="checkbox" id="active-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Active</span>
+                    </div>
+                </div>
+            
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary close-modal-btn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+            
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="viewEditModal">
+        <div class="modal">
+             <div class="modal-header">
+                <h2>View/Edit Reply</h2>
+                <button class="close-modal-btn"><i class='bx bx-x'></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Post</label>
+                    <textarea id="view-post-text" readonly>I need a simple tool to manage client feedback...</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Generated Reply</label>
+                    <textarea id="view-reply-text">You might like Reply4U — we draft helpful responses that keep the convo moving...</textarea>
+                </div>
+            </div>
+             <div class="modal-footer">
+                <button type="button" class="btn btn-secondary close-modal-btn">Close</button>
+                <button class="btn btn-secondary" id="approveReplyBtn">Approve</button>
+                <button class="btn btn-primary" id="postReplyBtn">Post</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
