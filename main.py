@@ -104,3 +104,4 @@ def get_queries(db: db_dependency, current_user: user_dependency):
             } for query in queries
         ]
     }
+# Now everything is fine
