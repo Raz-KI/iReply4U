@@ -99,21 +99,38 @@ def search_reddit_posts(query, list_of_subreddits, limit=5):
 
 def filter_relevant_posts_llm(posts, product_desc):
     relevant_posts = []
+    test=[]
     for post in posts:
         try:
-            subreddits = client.chat.completions.create(
+            relevantOrNot = client.chat.completions.create(
                 messages=[
-                    {"role": "system", "content": "Your job is to tell wether the post is relevant to the product or not"},
-                    {"role": "user", "content": "Post Title: " + post +" Product description: " + product_desc + ". If the post is relevant to the products description"
-                    "return YES otherwise return NO"
-                    }
+                    
+                    {"role": "system", "content": "You are a strict binary classifier. For each post, respond with only 'YES' if the post is relevant to the product description, or 'NO' if it is not. Do not include anything else.STRICTLY GENERATE ONLY YES OR NO, NO OTHER TEXT IS NEEDED. ALWAYS FOLLOW THE RULE"},
+                    {"role": "user", "content": "Post Title: "+post['title']+"Post Content: "+post['content']+"Product Description: "+product_desc+".Is this post relevant to the product description? Answer strictly with YES or NO.STRICTLY GENERATE NO OTHER CONTENT NOT EVEN SALUTATIONS AND NO EXPLANATIONS JUST A YES IF RELEVANT AND NO IF NOT RELEVANT"}
+                
                 ],
                 model="llama-3.3-70b-versatile",
             )
-            print(subreddits.choices[0].message.content)
+            reply = relevantOrNot.choices[0].message.content
+            # Choki to check if llm gave only YES or NO or not
+            text = reply.strip().lower()
+            print('Post: ',post['title'])
+            # Check for perfect match
+            if text in ["yes", "no"]:
+                print('perfect match:', text)
+                test.append(text.upper())
+            # Check for imperfect match
+            elif "yes" in text:
+                print('Imperfect YES')
+                test.append("YES")
+            elif "no" in text:
+                print("Imperfect NO")
+                test.append("NO")
             # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
+        
         except Exception as e:
             print(e)
+    print(test)
 def filter_relevant_posts_embeddings(posts, product_desc):
     product_embedding = model.encode(product_desc, convert_to_tensor=True)
 
@@ -152,49 +169,49 @@ def create_comment(product_id: int, db: Session):
     
     posts = search_reddit_posts(product_desc,list_of_subreddits)
 
-    relevant_posts = filter_relevant_posts_embeddings(posts, product_desc)
-    if not relevant_posts:
-        print("No relevant posts found at the moment.")
-    else:
-        for post in relevant_posts:
-            print("Post",post['title'],post['content'])
-            try:
-                reply = client.chat.completions.create(
-                    messages=[
-                        {
-                            "role": "system",
-                            "content": """You are ReplyGuy, an empathetic Reddit user.  
-                            Your job is to write natural, helpful, and conversational comments.  
-                            You must:
-                            - First, show empathy or understanding of the post.  
-                            - Second, give genuine advice or share an experience.  
-                            - Third, if it makes sense, naturally mention the product [PRODUCT_DESCRIPTION].  
-                            - Never sound like marketing. Avoid salesy words.  
-                            - Always write like a normal Reddit user (3–6 sentences).  
-                            - Keep it short, casual, and relevant.  
-                            - VERY IMPORTANT: ONLY GENERATE THE COMMENT, NOTHING ELSE, NO SALUTATION, NO GREETING, NO EXPLANATION ABOUT THE COMMENT, JUST THE COMMENT ITSELF.
-                            """
-                        },
-                        {
-                            "role": "user",
-                            "content": f"""
-                            Post Title: {post['title']}
-                            Post Content: {post['content']}
-                            Product Details: 
-                                Product Name: {product_name}
-                                Product Description: {product_desc}
-                                Product Link: {product_link}
+    relevant_posts = filter_relevant_posts_llm(posts, product_desc)
+    # if not relevant_posts:
+    #     print("No relevant posts found at the moment.")
+    # else:
+    #     for post in relevant_posts:
+    #         print("Post",post['title'],post['content'])
+    #         try:
+    #             reply = client.chat.completions.create(
+    #                 messages=[
+    #                     {
+    #                         "role": "system",
+    #                         "content": """You are ReplyGuy, an empathetic Reddit user.  
+    #                         Your job is to write natural, helpful, and conversational comments.  
+    #                         You must:
+    #                         - First, show empathy or understanding of the post.  
+    #                         - Second, give genuine advice or share an experience.  
+    #                         - Third, if it makes sense, naturally mention the product [PRODUCT_DESCRIPTION].  
+    #                         - Never sound like marketing. Avoid salesy words.  
+    #                         - Always write like a normal Reddit user (3–6 sentences).  
+    #                         - Keep it short, casual, and relevant.  
+    #                         - VERY IMPORTANT: ONLY GENERATE THE COMMENT, NOTHING ELSE, NO SALUTATION, NO GREETING, NO EXPLANATION ABOUT THE COMMENT, JUST THE COMMENT ITSELF.
+    #                         """
+    #                     },
+    #                     {
+    #                         "role": "user",
+    #                         "content": f"""
+    #                         Post Title: {post['title']}
+    #                         Post Content: {post['content']}
+    #                         Product Details: 
+    #                             Product Name: {product_name}
+    #                             Product Description: {product_desc}
+    #                             Product Link: {product_link}
                             
-                            Now write one natural Reddit comment following the system instructions. 
-                            STRICTLY FOLLOW THE RULES AND DON’T GENERATE ANY EXTRA CONTENT, JUST THE COMMENT.
-                            """
-                        }
-                    ],
-                    model="llama-3.3-70b-versatile",
-                )
+    #                         Now write one natural Reddit comment following the system instructions. 
+    #                         STRICTLY FOLLOW THE RULES AND DON’T GENERATE ANY EXTRA CONTENT, JUST THE COMMENT.
+    #                         """
+    #                     }
+    #                 ],
+    #                 model="llama-3.3-70b-versatile",
+    #             )
 
-                print("Reply Generated:", reply.choices[0].message.content.strip())
+    #             print("Reply Generated:", reply.choices[0].message.content.strip())
 
-                # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
-            except Exception as e:
-                print(e)
+    #             # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
+    #         except Exception as e:
+    #             print(e)
