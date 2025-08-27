@@ -1,3 +1,4 @@
+import datetime
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -35,7 +36,6 @@ from groq import Groq
 client = Groq(
     api_key=os.getenv("GROQ_API_KEY")
 )
-
 # Business logic functions
 def get_relevant_subreddits(product_desc):
     is_error = True
@@ -70,15 +70,12 @@ def get_relevant_subreddits(product_desc):
 
         except Exception as e:
             print("Error in get_relevant_subreddits:", e)
-            print(subreddits.choices[0].message.content)
+            
             
 
-def search_reddit_posts(query, list_of_subreddits, limit=5):
+def search_reddit_posts(query, list_of_subreddits, limit=1):
     # Show hot posts from combined subreddits
     combined = "+".join(list_of_subreddits)
-    # print("\n🔥 Hot posts from combined subreddits:\n")
-    # for submission in reddit.subreddit(combined).hot(limit=10):
-    #     print(submission.title,"This is the title")
 
     # Search individually across subreddits
     results = []
@@ -87,6 +84,7 @@ def search_reddit_posts(query, list_of_subreddits, limit=5):
         for submission in subreddit.new(limit=limit):
             results.append({
                 "subreddit": sub,
+                "post_id": submission.id,
                 "title": submission.title,
                 "url": submission.url,
                 "score": submission.score,
@@ -99,7 +97,7 @@ def search_reddit_posts(query, list_of_subreddits, limit=5):
 
 def filter_relevant_posts_llm(posts, product_desc):
     relevant_posts = []
-    test=[]
+    # test=[]
     for post in posts:
         try:
             relevantOrNot = client.chat.completions.create(
@@ -112,25 +110,16 @@ def filter_relevant_posts_llm(posts, product_desc):
                 model="llama-3.3-70b-versatile",
             )
             reply = relevantOrNot.choices[0].message.content
-            # Choki to check if llm gave only YES or NO or not
+            # Choki to check if llm gave only YES or NO or not and only send the  title content and id forward
             text = reply.strip().lower()
-            print('Post: ',post['title'])
-            # Check for perfect match
-            if text in ["yes", "no"]:
-                print('perfect match:', text)
-                test.append(text.upper())
-            # Check for imperfect match
-            elif "yes" in text:
-                print('Imperfect YES')
-                test.append("YES")
-            elif "no" in text:
-                print("Imperfect NO")
-                test.append("NO")
-            # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
+            if text in ["yes", "YES","Yes"]:
+                relevant_posts.append({"post_title":post['title'],"post_content":post['content'],"post_id":post['post_id']})
+            elif "yes" in text or "YES" in text or "Yes" in text:
+                relevant_posts.append({"post_title":post['title'],"post_content":post['content'],"post_id":post['post_id']})
         
         except Exception as e:
             print(e)
-    print(test)
+    return relevant_posts
 def filter_relevant_posts_embeddings(posts, product_desc):
     product_embedding = model.encode(product_desc, convert_to_tensor=True)
 
@@ -150,68 +139,100 @@ def filter_relevant_posts_embeddings(posts, product_desc):
     ranked = sorted([post for post in posts if post["similarity"] > 0.4],key=lambda x: x["similarity"],reverse=True)
 
 
-    # Print results
-    # for post in ranked:
-    #     print(f"{post['title']} -> relevance: {post['similarity']:.4f}")
     return ranked
+def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Session,product_id):
+
+    if not relevant_posts:
+        print("No relevant posts found at the moment.")
+    else:
+        for post in relevant_posts:
+            # try:
+            reply = client.chat.completions.create(
+                messages=[
+                    {
+                        "role": "system",
+                        "content": """You are ReplyGuy, an empathetic Reddit user.  
+                        Your job is to write natural, helpful, and conversational comments.  
+                        You must:
+                        - First, show empathy or understanding of the post.  
+                        - Second, give genuine advice or share an experience.  
+                        - Third, naturally mention the [product_name] and how it helps [PRODUCT_DESCRIPTION].  
+                        - Never sound like marketing. Avoid salesy words.  
+                        - Always write like a normal Reddit user (3–6 sentences).  
+                        - Keep it short, casual, and relevant.  
+                        - VERY IMPORTANT: ONLY GENERATE THE COMMENT, NOTHING ELSE, NO SALUTATION, NO GREETING, NO EXPLANATION ABOUT THE COMMENT, JUST THE COMMENT ITSELF.
+                        """
+                    },
+                    {
+                        "role": "user",
+                        "content": f"""
+                        Post Title: {post["post_title"]}
+                        Post Content: {post["post_content"]}
+                        Product Details: 
+                            Product Name: {product_name}
+                            Product Description: {product_desc}
+                            Product Link: {product_link}
+                        
+                        Now write one natural Reddit comment following the system instructions. 
+                        Casually m
+                        STRICTLY FOLLOW THE RULES AND DON’T GENERATE ANY EXTRA CONTENT, JUST THE COMMENT.
+                        """
+                    }
+                ],
+                model="llama-3.3-70b-versatile",
+            )
+            reply_text = reply.choices[0].message.content.strip()
+
+            # Save in DB
+            print("This is the post\n",post)
+            print("This is the reply\n",reply_text)
+            new_comment = models.Comment(
+                post_id=post["post_id"],
+                reply_text=reply_text,
+                posted_at = datetime.datetime.utcnow(),
+                post_title = post["post_title"],
+                post_content = post["post_content"],
+                product_id = product_id
+            )
+            db.add(new_comment)
+            db.commit()
+
+            print(f"💬 Comment saved for post '{post["post_title"]}'")
+
+            # except Exception as e:
+            #     print(f"❌ Error generating/saving reply: {e}")
+
+            #     # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
+            # except Exception as e:
+            #     print(e)
 
 # Main function to create a comment
 def create_comment(product_id: int, db: Session):
     # Example: Generate a comment for Reddit
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
+
+    
     product_name = product.product_name
     product_desc = product.product_desc
     product_link = product.product_link
     
-    
+    print(product_name,product_desc)
 
     list_of_subreddits = get_relevant_subreddits(product_desc)
     
     posts = search_reddit_posts(product_desc,list_of_subreddits)
 
-    relevant_posts = filter_relevant_posts_llm(posts, product_desc)
-    # if not relevant_posts:
-    #     print("No relevant posts found at the moment.")
-    # else:
-    #     for post in relevant_posts:
-    #         print("Post",post['title'],post['content'])
-    #         try:
-    #             reply = client.chat.completions.create(
-    #                 messages=[
-    #                     {
-    #                         "role": "system",
-    #                         "content": """You are ReplyGuy, an empathetic Reddit user.  
-    #                         Your job is to write natural, helpful, and conversational comments.  
-    #                         You must:
-    #                         - First, show empathy or understanding of the post.  
-    #                         - Second, give genuine advice or share an experience.  
-    #                         - Third, if it makes sense, naturally mention the product [PRODUCT_DESCRIPTION].  
-    #                         - Never sound like marketing. Avoid salesy words.  
-    #                         - Always write like a normal Reddit user (3–6 sentences).  
-    #                         - Keep it short, casual, and relevant.  
-    #                         - VERY IMPORTANT: ONLY GENERATE THE COMMENT, NOTHING ELSE, NO SALUTATION, NO GREETING, NO EXPLANATION ABOUT THE COMMENT, JUST THE COMMENT ITSELF.
-    #                         """
-    #                     },
-    #                     {
-    #                         "role": "user",
-    #                         "content": f"""
-    #                         Post Title: {post['title']}
-    #                         Post Content: {post['content']}
-    #                         Product Details: 
-    #                             Product Name: {product_name}
-    #                             Product Description: {product_desc}
-    #                             Product Link: {product_link}
-                            
-    #                         Now write one natural Reddit comment following the system instructions. 
-    #                         STRICTLY FOLLOW THE RULES AND DON’T GENERATE ANY EXTRA CONTENT, JUST THE COMMENT.
-    #                         """
-    #                     }
-    #                 ],
-    #                 model="llama-3.3-70b-versatile",
-    #             )
+    # Filter out the posts which have the same product id and same subreddit post id
+    existing_ids = {
+    c.post_id
+    for c in db.query(models.Comment.post_id)
+                .filter(models.Comment.product_id == product_id)
+                .all()
+    }
+    print("These Exists",existing_ids)
+    new_posts = [p for p in posts if p["post_id"] not in existing_ids]
+    
 
-    #             print("Reply Generated:", reply.choices[0].message.content.strip())
-
-    #             # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
-    #         except Exception as e:
-    #             print(e)
+    relevant_posts = filter_relevant_posts_llm(new_posts, product_desc)
+    print("These are the new posts",relevant_posts)
+    replies = generate_reply(relevant_posts, product_name, product_desc, product_link, db=db, product_id=product_id)

@@ -45,7 +45,7 @@ class Product(Base):
 
     customer = relationship("Customer", back_populates="products")
     subreddits = relationship("Subreddit", back_populates="product", cascade="all, delete")
-
+    comments = relationship("Comment", back_populates="product", cascade="all, delete")
 
 class Subreddit(Base):
     __tablename__ = "subreddits"
@@ -86,3 +86,17 @@ class Reply(Base):
     posted_at = Column(TIMESTAMP)
 
     reddit_post = relationship("RedditPost", back_populates="replies")
+
+class Comment(Base): 
+    __tablename__ = "comments" 
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Text)
+    reply_text = Column(Text, nullable=False)
+    posted_at = Column(TIMESTAMP)
+    post_title = Column(Text, nullable=False)
+    post_content = Column(Text, nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+
+    
+    product = relationship("Product", back_populates="comments")
