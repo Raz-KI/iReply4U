@@ -80,7 +80,7 @@ def create_search(search: SearchCreate,db: db_dependency, current_user: Annotate
     db.add(create_new_query)
     db.commit()
     product_id = db.query(Product.id).filter(Product.product_desc == search.keywords).first()[0]
-    create_comment(product_id,db)
+    create_comment(product_id,db,current_user)
 
     
     

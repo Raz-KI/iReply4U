@@ -140,7 +140,7 @@ def filter_relevant_posts_embeddings(posts, product_desc):
 
 
     return ranked
-def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Session,product_id):
+def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Session,product_id,current_user: user_dependency):
 
     if not relevant_posts:
         return "No Relevant Post at this moment..."
@@ -192,16 +192,17 @@ def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Ses
                 posted_at = datetime.datetime.utcnow(),
                 post_title = post["post_title"],
                 post_content = post["post_content"],
-                product_id = product_id
+                product_id = product_id,
+                customer_id=current_user["id"]
             )
             db.add(new_comment)
             db.commit()
 
             print(f" Comment saved for post '{post["post_title"]}'")
-    
+
 
 # Main function to create a comment
-def create_comment(product_id: int, db: Session):
+def create_comment(product_id: int, db: Session,current_user:user_dependency):
     # Example: Generate a comment for Reddit
     product = db.query(models.Product).filter(models.Product.id == product_id).first()
 
@@ -229,4 +230,4 @@ def create_comment(product_id: int, db: Session):
 
     relevant_posts = filter_relevant_posts_llm(new_posts, product_desc)
     print("These are the new posts",relevant_posts)
-    replies = generate_reply(relevant_posts, product_name, product_desc, product_link, db=db, product_id=product_id)
+    replies = generate_reply(relevant_posts, product_name, product_desc, product_link, product_id=product_id, db=db, current_user=current_user)
