@@ -95,7 +95,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                         <td><i class='bx ${platformInfo[query.platform].icon}'></i> ${platformInfo[query.platform].name}</td>
                         <td>${query.id}</td>
                         <td><span class="status-badge ${query.is_active ? 'status-active' : 'status-paused'}">${query.is_active ? 'Active' : 'Paused'}</span></td>
+                        <td>${query.product_name}</td>
                         <td>${query.product_desc}</td>
+                        <td>${query.product_link}</td>
                         <td>
                             <button class="btn btn-secondary btn-pause-resume">${query.is_active ? 'Pause' : 'Resume'}</button>
                             <button class="btn btn-danger btn-delete">Delete</button>

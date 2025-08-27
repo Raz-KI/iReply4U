@@ -97,7 +97,9 @@ def get_queries(db: db_dependency, current_user: user_dependency):
         "queries": [
             {
                 "id": query.id,
+                "product_name": query.product_name,
                 "product_desc": query.product_desc,
+                "product_link": query.product_link,
                 "is_active": query.is_active,
                 "created_at": query.created_at,
                 "platform": query.platform,

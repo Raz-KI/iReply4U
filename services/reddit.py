@@ -143,7 +143,7 @@ def filter_relevant_posts_embeddings(posts, product_desc):
 def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Session,product_id):
 
     if not relevant_posts:
-        print("No relevant posts found at the moment.")
+        return "No Relevant Post at this moment..."
     else:
         for post in relevant_posts:
             # try:
@@ -197,14 +197,8 @@ def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Ses
             db.add(new_comment)
             db.commit()
 
-            print(f"💬 Comment saved for post '{post["post_title"]}'")
-
-            # except Exception as e:
-            #     print(f"❌ Error generating/saving reply: {e}")
-
-            #     # list_of_subreddits = json.loads(subreddits.choices[0].message.content)
-            # except Exception as e:
-            #     print(e)
+            print(f" Comment saved for post '{post["post_title"]}'")
+    
 
 # Main function to create a comment
 def create_comment(product_id: int, db: Session):
