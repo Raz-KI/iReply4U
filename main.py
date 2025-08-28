@@ -122,8 +122,10 @@ def get_replies(db: db_dependency, current_user: user_dependency, limit: int = 5
             {
                 "id": reply.id,
                 "platform": reply.platform,
-                "post_preview": reply.post_content[:80] + "..." if len(reply.post_content) > 80 else reply.post_content,
-                "reply_preview": reply.reply_text[:80] + "..." if len(reply.reply_text) > 80 else reply.reply_text,
+                # "post_preview": reply.post_content[:80] + "..." if len(reply.post_content) > 80 else reply.post_content,
+                "post_preview": reply.post_content,
+                # "reply_preview": reply.reply_text[:80] + "..." if len(reply.reply_text) > 80 else reply.reply_text,
+                "reply_preview": reply.reply_text,
                 "status": "Posted",  # you can later map to actual status if needed
                 "date": reply.posted_at.strftime("%Y-%m-%d %H:%M"),
             }
