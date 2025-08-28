@@ -11,7 +11,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
     try {
-        const res = await fetch("/api/get_replies");
+        const res = await fetch("/api/get_replies", {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
         if (!res.ok) throw new Error("Failed to fetch replies");
         const data = await res.json();
 
@@ -30,7 +35,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 </td>
                 <td><span class="status-badge status-${reply.status.toLowerCase()}">${reply.status}</span></td>
                 <td>${reply.date}</td>
-                <td><button class="btn btn-secondary btn-view-edit">View/Edit</button></td>
+                <td><button class="btn btn-secondary btn-view-edit">View</button></td>
             `;
             tbody.appendChild(row);
         });
@@ -101,7 +106,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             headers: {
                 "Authorization": `Bearer ${token}`
             }
-
         });
         if (!res.ok) {
             const errText = await res.text();
@@ -286,6 +290,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 
                 document.getElementById('view-post-text').value = fullPostText;
                 document.getElementById('view-reply-text').value = fullReplyText;
+
+                document.getElementById('view-post-text').readOnly = true;
+                document.getElementById('view-reply-text').readOnly = true;
                 
                 openModal(viewEditModal);
             }
