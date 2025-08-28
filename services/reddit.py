@@ -193,7 +193,8 @@ def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Ses
                 post_title = post["post_title"],
                 post_content = post["post_content"],
                 product_id = product_id,
-                customer_id=current_user["id"]
+                customer_id=current_user["id"],
+                platform="reddit"
             )
             db.add(new_comment)
             db.commit()

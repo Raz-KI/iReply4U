@@ -1,3 +1,7 @@
+function truncateText(text, maxLength = 50) {
+    if (!text) return "";
+    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+}
 
 document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
@@ -6,7 +10,33 @@ document.addEventListener("DOMContentLoaded", async () => {
         // window.location.href = "/login.html";
         return;
     }
+    try {
+        const res = await fetch("/api/get_replies");
+        if (!res.ok) throw new Error("Failed to fetch replies");
+        const data = await res.json();
 
+        const tbody = document.getElementById("replies-tbody");
+        tbody.innerHTML = ""; // clear old rows
+
+        data.replies.forEach(reply => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td><i class='bx bxl-${reply.platform.toLowerCase()}'></i> ${reply.platform}</td>
+                <td class="post-preview" data-full-text="${reply.post_preview}">
+                    ${truncateText(reply.post_preview, 50)}
+                </td>
+                <td class="reply-preview" data-full-text="${reply.reply_preview}">
+                    ${truncateText(reply.reply_preview, 50)}
+                </td>
+                <td><span class="status-badge status-${reply.status.toLowerCase()}">${reply.status}</span></td>
+                <td>${reply.date}</td>
+                <td><button class="btn btn-secondary btn-view-edit">View/Edit</button></td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (err) {
+        console.error("Error loading replies:", err);
+    }
     try {
         const res = await fetch("/dashboard-data", {
             method: "GET",

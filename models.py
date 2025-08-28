@@ -97,6 +97,7 @@ class Comment(Base):
     posted_at = Column(TIMESTAMP)
     post_title = Column(Text, nullable=False)
     post_content = Column(Text, nullable=False)
+    platform = Column(String, default="reddit")
 
     product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
     customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"), nullable=False) 

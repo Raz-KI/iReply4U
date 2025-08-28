@@ -11,7 +11,7 @@ from typing import List, Annotated
 from pydantic import BaseModel #used for data validation and useful error messages
 from auth import get_current_user
 import datetime
-from models import Product, Customer
+from models import Product, Customer, Comment
 from services.reddit import create_comment
 
 app = FastAPI()
@@ -106,4 +106,27 @@ def get_queries(db: db_dependency, current_user: user_dependency):
             } for query in queries
         ]
     }
-# Now everything is fine
+from sqlalchemy import desc
+
+@app.get("/api/get_replies")
+def get_replies(db: db_dependency, current_user: user_dependency, limit: int = 5):
+    replies = (
+        db.query(models.Comment)
+        .filter(models.Comment.customer_id == current_user["id"])
+        .order_by(desc(models.Comment.posted_at))
+        .limit(limit)
+        .all()
+    )
+    return {
+        "replies": [
+            {
+                "id": reply.id,
+                "platform": reply.platform,
+                "post_preview": reply.post_content[:80] + "..." if len(reply.post_content) > 80 else reply.post_content,
+                "reply_preview": reply.reply_text[:80] + "..." if len(reply.reply_text) > 80 else reply.reply_text,
+                "status": "Posted",  # you can later map to actual status if needed
+                "date": reply.posted_at.strftime("%Y-%m-%d %H:%M"),
+            }
+            for reply in replies
+        ]
+    }
