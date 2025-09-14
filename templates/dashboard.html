@@ -21,16 +21,16 @@
             </div>
             <ul class="sidebar-nav">
                 <li>
-                    <a href="#" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a>
+                    <a href="#dashboard" class="active"><i class='bx bxs-dashboard'></i> Dashboard</a>
                 </li>
                 <li>
-                    <a href="#"><i class='bx bx-search'></i> Search Queries</a>
+                    <a href="#queries"><i class='bx bx-search'></i> Search Queries</a>
                 </li>
                 <li>
-                    <a href="#"><i class='bx bx-reply-all'></i> Replies</a>
+                    <a href="#replies"><i class='bx bx-reply-all'></i> Replies</a>
                 </li>
                 <li>
-                    <a href="#"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a>
+                    <a href="#engagement-chart"><i class='bx bx-bar-chart-alt-2'></i> Analytics</a>
                 </li>
                 <li>
                     <a href="#"><i class='bx bx-cog'></i> Settings</a>
@@ -48,32 +48,32 @@
                         <label for="theme-toggle" class="theme-toggle-label"></label>
                     </div>
                     <div class="user-profile">
-                        <img src="https://i.pravatar.cc/40?u=alexdoe" alt="Alex Doe">
+                        <img src="https://cdn.pixabay.com/photo/2016/08/08/09/17/avatar-1577909_1280.png" alt="Alex Doe">
                         <span id="companyName">{{company_name}}</span>
                         <i class='bx bx-chevron-down'></i>
                     </div>
                 </div>
             </header>
 
-            <section class="stats-grid">
+            <section id="dashboard" class="stats-grid">
                 <div class="stat-card">
                     <div class="card-icon search-icon"><i class='bx bx-search'></i></div>
                     <div class="card-info">
-                        <p class="card-value">1,248</p>
+                        <p id="search-count" class="card-value">1,248</p>
                         <p class="card-label">Total Searches</p>
                     </div>
                 </div>
-                <div class="stat-card">
+                <!-- <div class="stat-card">
                     <div class="card-icon generated-icon"><i class='bx bxs-bot'></i></div>
                     <div class="card-info">
-                        <p class="card-value">3,672</p>
+                        <p id="reply-count" class="card-value">3,672</p>
                         <p class="card-label">Replies Generated</p>
                     </div>
-                </div>
+                </div> -->
                 <div class="stat-card">
                     <div class="card-icon posted-icon"><i class='bx bxs-send'></i></div>
                     <div class="card-info">
-                        <p class="card-value">2,910</p>
+                        <p id="reply-count" class="card-value">2,910</p>
                         <p class="card-label">Replies Posted</p>
                     </div>
                 </div>
@@ -86,7 +86,7 @@
                 </div>
             </section>
 
-            <section class="content-table">
+            <section class="content-table" id="queries">
                 <div class="table-header">
                     <h2>Active Search Queries</h2>
                     <button class="btn btn-primary" id="newSearchBtn"><i class='bx bx-plus'></i> New Search Query</button>
@@ -109,7 +109,7 @@
                 </table>
             </section>
             
-            <section class="content-table">
+            <section class="content-table" id="replies">
                  <div class="table-header">
                     <h2>Recent Replies</h2>
                 </div>
@@ -138,7 +138,7 @@
                 </table>
             </section>
 
-            <section class="chart-container">
+            <section class="chart-container" id="engagement-chart">
                  <h2>Engagement Chart</h2>
                  <canvas id="engagementChart"></canvas>
             </section>

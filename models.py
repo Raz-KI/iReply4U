@@ -12,6 +12,8 @@ class Customer(Base):
     company_name = Column(String)
     created_at = Column(TIMESTAMP, default=datetime.utcnow)
     last_login = Column(TIMESTAMP)
+    total_searches = Column(Integer)
+    total_replies_posted = Column(Integer)
 
     reddit_accounts = relationship("RedditAccount", back_populates="customer", cascade="all, delete")
     products = relationship("Product", back_populates="customer", cascade="all, delete")
@@ -103,4 +105,4 @@ class Comment(Base):
     customer_id = Column(Integer, ForeignKey("customers.id", ondelete="CASCADE"), nullable=False) 
 
     product = relationship("Product", back_populates="comments")
-    customer = relationship("Customer", back_populates="comments")  
+    customer = relationship("Customer", back_populates="comments")

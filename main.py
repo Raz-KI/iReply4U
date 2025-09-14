@@ -44,14 +44,26 @@ async def landing_page(request: Request):
     return templates.TemplateResponse("landing.html", {"request": request})
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard_page(request: Request,db: db_dependency):
+async def dashboard_page(request: Request):
     # company_name = db.query()
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
 
 @app.get("/dashboard-data")
-async def get_dashboard_data(current_user: Annotated[dict, Depends(get_current_user)]):
-    return {"username": current_user["username"], "id": current_user["id"], "company_name": current_user["company_name"]}
+async def get_dashboard_data(db: db_dependency, current_user: user_dependency):
+    customer = db.query(Customer).filter(Customer.id == current_user["id"]).first()
+    if not customer:
+        return {"error": "Customer not found"}
+
+    return {
+        "id": customer.id,
+        "username": current_user["username"],
+        "company_name": customer.company_name,
+        "search_count": customer.total_searches or 0,
+        "reply_count": customer.total_replies_posted or 0,
+    }
+
+   
 
 class SearchCreate(BaseModel):
     platform: str
@@ -81,8 +93,6 @@ def create_search(search: SearchCreate,db: db_dependency, current_user: Annotate
     db.commit()
     product_id = db.query(Product.id).filter(Product.product_desc == search.keywords).first()[0]
     create_comment(product_id,db,current_user)
-
-    
     
     return {
         "message": "Search query saved successfully",

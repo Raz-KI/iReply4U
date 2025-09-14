@@ -10,7 +10,10 @@ import asyncpraw,prawcore,praw
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer,util
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
+try:
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+except Exception as e:
+    print(f"Some error {e}")
 
 load_dotenv()
 
@@ -23,7 +26,7 @@ reddit = praw.Reddit(
 )
 # Dependency
 def get_db():
-    db = SessionLocal()
+    db = SessionLocal() 
     try:
         yield db    
     finally:
@@ -66,6 +69,7 @@ def get_relevant_subreddits(product_desc):
                     continue
 
             is_error = False
+            print("Valid subreddits:", valid_subreddits)
             return valid_subreddits
 
         except Exception as e:
@@ -73,7 +77,7 @@ def get_relevant_subreddits(product_desc):
             
             
 
-def search_reddit_posts(query, list_of_subreddits, limit=1):
+def search_reddit_posts(db: Session, product_id, list_of_subreddits, current_user: user_dependency, limit=5):
     # Show hot posts from combined subreddits
     combined = "+".join(list_of_subreddits)
 
@@ -91,8 +95,21 @@ def search_reddit_posts(query, list_of_subreddits, limit=1):
                 "comments": submission.num_comments,
                 "content": submission.selftext
             })
+        existing_ids = {
+    c.post_id
+    for c in db.query(models.Comment.post_id)
+                .filter(models.Comment.product_id == product_id)
+                .all()
+    }
+    new_posts = [p for p in results if p["post_id"] not in existing_ids]
+    search_count = len(new_posts)
+    # query to update the seach count in customer table
+    count = db.query(models.Customer).filter(models.Customer.id == current_user["id"]).first()
+    if count:
+        count.total_searches += search_count
+        db.commit()
 
-    return results
+    return new_posts
 
 
 def filter_relevant_posts_llm(posts, product_desc):
@@ -141,7 +158,8 @@ def filter_relevant_posts_embeddings(posts, product_desc):
 
     return ranked
 def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Session,product_id,current_user: user_dependency):
-
+    results = []
+    reply_count = 0
     if not relevant_posts:
         return "No Relevant Post at this moment..."
     else:
@@ -183,9 +201,10 @@ def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Ses
             )
             reply_text = reply.choices[0].message.content.strip()
 
+            results.append({post["post_id"],reply_text})
             # Save in DB
-            print("This is the post\n",post)
-            print("This is the reply\n",reply_text)
+            # print("This is the post\n",post)
+            # print("This is the reply\n",reply_text)
             new_comment = models.Comment(
                 post_id=post["post_id"],
                 reply_text=reply_text,
@@ -194,12 +213,21 @@ def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Ses
                 post_content = post["post_content"],
                 product_id = product_id,
                 customer_id=current_user["id"],
-                platform="reddit"
+                platform="Reddit"
             )
             db.add(new_comment)
-            db.commit()
 
+
+            db.commit()
             print(f" Comment saved for post '{post["post_title"]}'")
+            reply_count+=1
+            
+        count = db.query(models.Customer).filter(models.Customer.id == current_user["id"]).first()
+        if count:
+            count.total_replies_posted += reply_count
+            db.commit()
+    return results
+            
 
 
 # Main function to create a comment
@@ -216,19 +244,16 @@ def create_comment(product_id: int, db: Session,current_user:user_dependency):
 
     list_of_subreddits = get_relevant_subreddits(product_desc)
     
-    posts = search_reddit_posts(product_desc,list_of_subreddits)
+    posts = search_reddit_posts(db, product_id, list_of_subreddits, current_user)
 
-    # Filter out the posts which have the same product id and same subreddit post id
-    existing_ids = {
-    c.post_id
-    for c in db.query(models.Comment.post_id)
-                .filter(models.Comment.product_id == product_id)
-                .all()
-    }
-    print("These Exists",existing_ids)
-    new_posts = [p for p in posts if p["post_id"] not in existing_ids]
-    
+    relevant_posts = filter_relevant_posts_llm(posts, product_desc)
 
-    relevant_posts = filter_relevant_posts_llm(new_posts, product_desc)
-    print("These are the new posts",relevant_posts)
     replies = generate_reply(relevant_posts, product_name, product_desc, product_link, product_id=product_id, db=db, current_user=current_user)
+    
+    print(replies)
+
+    # When You will post update the database
+    # count = db.query(models.Customer).filter(models.Customer.id == current_user["id"]).first()
+    # if count:
+    #     count.total_replies_posted += 1
+    #     db.commit()

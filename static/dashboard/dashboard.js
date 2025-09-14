@@ -1,13 +1,7 @@
-function truncateText(text, maxLength = 50) {
-    if (!text) return "";
-    return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-}
 
 document.addEventListener("DOMContentLoaded", async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-        // Not logged in
-        // window.location.href = "/login.html";
         return;
     }
     
@@ -27,15 +21,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const data = await res.json();
+        console.log(data)
         document.getElementById("companyName").textContent = `${data.company_name}`;
-        console.log(data);
+        document.getElementById("search-count").textContent = `${data.search_count}`;
+        document.getElementById("reply-count").textContent = `${data.reply_count}`;
     } catch (err) {
         console.error(err);
         // window.location.href = "/login.html";
     }
-});
-document.addEventListener('DOMContentLoaded', async function () {
-    const token = localStorage.getItem("token");
+// });
+// document.addEventListener('DOMContentLoaded', async function () {
+    // const token = localStorage.getItem("token");
     //=========== GLOBAL ELEMENT SELECTORS & STATE ===========//
     const newSearchModal = document.getElementById('newSearchModal');
     const viewEditModal = document.getElementById('viewEditModal');
@@ -83,7 +79,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
         else {
             const data = await res.json();
-            console.log("Fetched queries:", data);
             if (data && data.queries) {
                 data.queries.forEach(query => {
                     const platformInfo = {
@@ -92,7 +87,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                         twitter: { icon: 'bxl-twitter', name: 'X/Twitter' },
                         facebook: { icon: 'bxl-facebook-square', name: 'Facebook' },
                     };
-                    // console.log("Query:", query,query.platform);
                     const newRow = document.createElement('tr');
                     newRow.innerHTML = `
                         <td><i class='bx ${platformInfo[query.platform].icon}'></i> ${platformInfo[query.platform].name}</td>
@@ -128,7 +122,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     
     //=========== ACTIVE SEARCH QUERIES LOGIC ===========//
     if (newSearchForm) {
-        // console.log("Token:", token);
         newSearchForm.addEventListener('submit',async function(event) {
             event.preventDefault(); 
             const platformSelect = document.getElementById('platform');
@@ -152,10 +145,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                 twitter: { icon: 'bxl-twitter', name: 'X/Twitter' },
                 facebook: { icon: 'bxl-facebook-square', name: 'Facebook' },
             };
-            console.log("took the input")
-            console.log("Platform:", platform, "Product Name:", productName, "Keywords:", keywords, "Link:", link, "Is Active:", isActive);
             try {
-                // console.log("Token:", token);
                 const res = await fetch("/api/new_query", {
                     method: "POST",
                     headers: {
@@ -173,9 +163,7 @@ document.addEventListener('DOMContentLoaded', async function () {
                     
                     
                 });
-                console.log("took the input")
                 const data = await res.json();
-                console.log("Response data:", data.query_id,data);
     
                 if (!res.ok) {
                     const errText = await res.text();
@@ -184,9 +172,8 @@ document.addEventListener('DOMContentLoaded', async function () {
                 }
     
                 
-                console.log("Saved successfully:", data);
     
-                // ✅ Update UI only after backend confirms
+                //  Update UI only after backend confirms
                 const platformInfo = {
                     reddit: { icon: 'bxl-reddit', name: 'Reddit' },
                     linkedin: { icon: 'bxl-linkedin-square', name: 'LinkedIn' },
@@ -257,7 +244,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         data.replies.forEach(reply => {
             const row = document.createElement("tr");
-            console.log(reply.post_preview)
             row.innerHTML = `
                 <td><i class='bx bxl-${reply.platform.toLowerCase()}'></i> ${reply.platform}</td>
                 <td class="post-preview" data-full-text="${reply.post_preview}">
