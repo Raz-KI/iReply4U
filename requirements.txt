@@ -5,7 +5,13 @@ asyncpg
 psycopg2-binary
 python-dotenv
 passlib[bcrypt]
+bcrypt==4.0.1
 python-jose[cryptography]
 python-multipart
 psycopg2-binary
 groq
+supabase
+websockets
+asyncpraw
+prawcore
+praw

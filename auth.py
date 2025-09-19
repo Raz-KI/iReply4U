@@ -2,13 +2,11 @@ from datetime import datetime, timedelta
 from typing import Annotated
 from fastapi import APIRouter,Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from starlette import status
-from database import SessionLocal
-from models import Customer
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
+from supabase_client import get_supabase
 
 router = APIRouter(
     prefix='/auth',
@@ -19,7 +17,7 @@ SECRET_KEY = '21308uh0412o48h1204912h9r0hfr30f19r'
 ALGORITHM = 'HS256'
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/login')
+oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 # Pydantic Model for auto validation
 class CreateUserRequest(BaseModel):
@@ -31,48 +29,51 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-db_dependency = Annotated[Session, Depends(get_db)]
-
 # The request at /auth will come here and the json will be automatically converted to CreateUserRequest
 # This is the pydantic model which is useful for catching errors meaningfully
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(create_user_request: CreateUserRequest,
-                       db: db_dependency):
-    create_user_model = Customer(
-        email=create_user_request.email,
-        hashed_password=bcrypt_context.hash(create_user_request.password),
-        company_name=create_user_request.company_name
-    )
+async def create_user(create_user_request: CreateUserRequest):
+    supabase = get_supabase()
+    # Check if user exists
+    existing = supabase.table('customers').select('id').eq('email', create_user_request.email).limit(1).execute()
+    if existing.data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail='Email already registered')
 
-    db.add(create_user_model)
-    db.commit()
+    hashed = bcrypt_context.hash(create_user_request.password)
+    insert_res = supabase.table('customers').insert({
+        'email': create_user_request.email,
+        'hashed_password': hashed,
+        'company_name': create_user_request.company_name,
+        'created_at': datetime.utcnow().isoformat(),
+        'total_searches': 0,
+        'total_replies_posted': 0,
+    }).execute()
+    if not insert_res.data:
+        raise HTTPException(status_code=400, detail="Failed to insert user")
+
+    return {"message": "User created", "data": insert_res.data}
+
 
 @router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                                 db: db_dependency):
-    user = authenticate_user(form_data.username,form_data.password, db)
+async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = create_access_token(user.email, user.id, timedelta(minutes=200),user.company_name)
+    token = create_access_token(user['email'], user['id'], timedelta(minutes=200), user.get('company_name') or '')
 
     return {'access_token': token, "token_type": "bearer"}
 
-def authenticate_user(email:str, password:str, db):
-    user = db.query(Customer).filter(Customer.email == email).first()
-    if not user:
+def authenticate_user(email: str, password: str):
+    supabase = get_supabase()
+    res = supabase.table('customers').select('id,email,hashed_password,company_name').eq('email', email).limit(1).execute()
+    if not res.data:
         return False
-    if not bcrypt_context.verify(password,user.hashed_password):
+    user = res.data[0]
+    if not bcrypt_context.verify(password, user['hashed_password']):
         return False
     return user
 

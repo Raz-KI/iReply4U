@@ -1,14 +1,13 @@
 import datetime
-from fastapi import Depends
-from sqlalchemy.orm import Session
 from typing import Annotated
-from database import SessionLocal
+from fastapi import Depends
 from auth import get_current_user
-import models,json
+import json
 import os
 import asyncpraw,prawcore,praw
 from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer,util
+from supabase_client import get_supabase
 
 try:
     model = SentenceTransformer("all-MiniLM-L6-v2")
@@ -24,16 +23,7 @@ reddit = praw.Reddit(
     # password=os.getenv("REDDIT_PASSWORD"),
     user_agent=os.getenv("REDDIT_USER_AGENT")
 )
-# Dependency
-def get_db():
-    db = SessionLocal() 
-    try:
-        yield db    
-    finally:
-        db.close()
-
-db_dependency = Annotated[Session, Depends(get_db)]
-user_dependency = Annotated[models.Customer, Depends(get_current_user)]
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 from groq import Groq
 client = Groq(
@@ -77,7 +67,7 @@ def get_relevant_subreddits(product_desc):
             
             
 
-def search_reddit_posts(db: Session, product_id, list_of_subreddits, current_user: user_dependency, limit=5):
+def search_reddit_posts(product_id, list_of_subreddits, current_user: user_dependency, limit=5):
     # Show hot posts from combined subreddits
     combined = "+".join(list_of_subreddits)
 
@@ -95,19 +85,17 @@ def search_reddit_posts(db: Session, product_id, list_of_subreddits, current_use
                 "comments": submission.num_comments,
                 "content": submission.selftext
             })
-        existing_ids = {
-    c.post_id
-    for c in db.query(models.Comment.post_id)
-                .filter(models.Comment.product_id == product_id)
-                .all()
-    }
+        sb = get_supabase()
+        existing = sb.table('comments').select('post_id').eq('product_id', product_id).execute()
+        existing_ids = {c['post_id'] for c in (existing.data or [])}
     new_posts = [p for p in results if p["post_id"] not in existing_ids]
     search_count = len(new_posts)
-    # query to update the seach count in customer table
-    count = db.query(models.Customer).filter(models.Customer.id == current_user["id"]).first()
-    if count:
-        count.total_searches += search_count
-        db.commit()
+    # update the search count in customer table
+    if search_count:
+        # read-modify-write for total_searches
+        cust = sb.table('customers').select('total_searches').eq('id', current_user['id']).limit(1).execute()
+        current = (cust.data or [{}])[0].get('total_searches') or 0
+        sb.table('customers').update({'total_searches': current + search_count}).eq('id', current_user['id']).execute()
 
     return new_posts
 
@@ -157,7 +145,7 @@ def filter_relevant_posts_embeddings(posts, product_desc):
 
 
     return ranked
-def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Session,product_id,current_user: user_dependency):
+def generate_reply(relevant_posts,product_name,product_desc,product_link,product_id,current_user: user_dependency):
     results = []
     reply_count = 0
     if not relevant_posts:
@@ -205,50 +193,50 @@ def generate_reply(relevant_posts,product_name,product_desc,product_link,db: Ses
             # Save in DB
             # print("This is the post\n",post)
             # print("This is the reply\n",reply_text)
-            new_comment = models.Comment(
-                post_id=post["post_id"],
-                reply_text=reply_text,
-                posted_at = datetime.datetime.utcnow(),
-                post_title = post["post_title"],
-                post_content = post["post_content"],
-                product_id = product_id,
-                customer_id=current_user["id"],
-                platform="Reddit"
-            )
-            db.add(new_comment)
-
-
-            db.commit()
+            sb = get_supabase()
+            sb.table('comments').insert({
+                'post_id': post["post_id"],
+                'reply_text': reply_text,
+                'posted_at': datetime.datetime.utcnow().isoformat(),
+                'post_title': post["post_title"],
+                'post_content': post["post_content"],
+                'product_id': product_id,
+                'customer_id': current_user["id"],
+                'platform': "Reddit",
+            }).execute()
             print(f" Comment saved for post '{post["post_title"]}'")
             reply_count+=1
             
-        count = db.query(models.Customer).filter(models.Customer.id == current_user["id"]).first()
-        if count:
-            count.total_replies_posted += reply_count
-            db.commit()
+        if reply_count:
+            # read-modify-write for total_replies_posted
+            cust = sb.table('customers').select('total_replies_posted').eq('id', current_user['id']).limit(1).execute()
+            current = (cust.data or [{}])[0].get('total_replies_posted') or 0
+            sb.table('customers').update({'total_replies_posted': current + reply_count}).eq('id', current_user['id']).execute()
     return results
             
 
 
 # Main function to create a comment
-def create_comment(product_id: int, db: Session,current_user:user_dependency):
-    # Example: Generate a comment for Reddit
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
-
-    
-    product_name = product.product_name
-    product_desc = product.product_desc
-    product_link = product.product_link
+def create_comment(product_id: int, current_user:user_dependency):
+    # Fetch product
+    sb = get_supabase()
+    res = sb.table('products').select('product_name,product_desc,product_link').eq('id', product_id).limit(1).execute()
+    if not res.data:
+        return
+    product = res.data[0]
+    product_name = product['product_name']
+    product_desc = product['product_desc']
+    product_link = product['product_link']
     
     print(product_name,product_desc)
 
     list_of_subreddits = get_relevant_subreddits(product_desc)
     
-    posts = search_reddit_posts(db, product_id, list_of_subreddits, current_user)
+    posts = search_reddit_posts(product_id, list_of_subreddits, current_user)
 
     relevant_posts = filter_relevant_posts_llm(posts, product_desc)
 
-    replies = generate_reply(relevant_posts, product_name, product_desc, product_link, product_id=product_id, db=db, current_user=current_user)
+    replies = generate_reply(relevant_posts, product_name, product_desc, product_link, product_id=product_id, current_user=current_user)
     
     print(replies)
 

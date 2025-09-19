@@ -27,7 +27,7 @@ document.getElementById('signupForm').addEventListener('submit',async function(e
     }
 
     console.log('Signup reached')
-    const response = await fetch("http://127.0.0.1:8000/auth/", {
+    const response = await fetch("http://127.0.0.1:8008/auth/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, company_name})
